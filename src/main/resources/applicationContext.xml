@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans.xsd
+    http://www.springframework.org/schema/context
+    http://www.springframework.org/schema/context/spring-context.xsd
+    http://www.springframework.org/schema/aop
+    http://www.springframework.org/schema/aop/spring-aop.xsd
+    http://www.springframework.org/schema/tx
+    http://www.springframework.org/schema/tx/spring-tx.xsd">
+    <!--开启注解扫描，一般写在配置文件的开头 扫描com包下（其子孙包）的所有类-->
+    <context:component-scan base-package="com"/>
+
+    <context:spring-configured/>
+    <!--开启AOP的注解-->
+    <aop:aspectj-autoproxy/>
+    <!--最简单无参数bean 使用类的无参构造创建实例-->
+    <bean id="stu" class="com.max.zero.Student"></bean>
+
+    <bean id="stu1" class="com.max.zero.Student">
+        <!--构造方法的参数 index是第几个参数 name是参数名 type是参数类型-->
+        <constructor-arg index="0" name="name" type="java.lang.String" value="李四"> </constructor-arg>
+        <constructor-arg index="1" name="age" type="int" value="11"> </constructor-arg>
+    </bean>
+
+    <!--静态工厂方式创建bean  class是工厂的全类名  factory-method工厂类的方法名
+    这个方法生成具体bean实例的方法
+    -->
+    <bean id="stu2" class="com.max.zero.StuFactory" factory-method="newInstance"></bean>
+
+    <!--创建工厂实例bean-->
+    <bean id="stuFactory" class="com.max.zero.StuFactory"></bean>
+
+    <!--使用工厂的bean实例 创建Student对象
+    factory-bean 使用工厂实例bean的id
+    factory-method  工厂实例的普通创建对象bean方法
+    -->
+    <bean id="stu3" factory-bean="stuFactory" factory-method="getStudent"></bean>
+
+    <bean id="stu4"  class="com.max.zero.Student">
+        <property name="name" value="lucy"></property>
+        <property name="age" value="15"></property>
+    </bean>
+
+    <bean id="stu5" class="com.max.zero.Student">
+        <property name="strs">
+            <array>
+                <value>张三</value>
+                <value>李四</value>
+                <value>王五</value>
+            </array>
+        </property>
+    </bean>
+
+    <bean id="stu6" class="com.max.zero.Student">
+        <property name="list">
+            <list>
+                <value>张三1</value>
+                <value>李四1</value>
+                <value>王五1</value>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="dept" class="com.max.zero.Dept">
+        <property name="dId" value="1"></property>
+        <property name="dName" value="软件开发部"></property>
+    </bean>
+    <!--当属性是一个类的时候 property中不用value 使用 ref ref的值是配置好的bean的id 意思是引用配置好的bean-->
+    <bean id="emp" class="com.max.zero.Emp">
+        <property name="eName" value="张三"></property>
+        <property name="dept" ref="dept"></property>
+    </bean>
+
+    <!--指定了在 bean 实例化 之后执行的方法 也叫初始化方法  可以在初始化方法中做对象的一些初始化的一些工作
+    destory 只在单例模式下有效
+    -->
+    <bean id="users" class="com.max.zero.Users" init-method="init" destroy-method="destory"></bean>
+
+
+    <!--创建通知类对象-->
+    <bean id="myMethodAdvice" class="com.max.one.MyMethodAdvice"></bean>
+
+    <!--aop配置-->
+    <aop:config>
+        <!--切入点表达式，定义我们给哪些类的哪些方法去做aop配置
+        execution( * com.max.one.*.*(..))
+        上面的意思是 com.max.one包下所有类的任意方法（包括有参无参），方法有无返回值都可以
+        第一个* 返回值类型任意
+        第二个* com.max.one包下的所有类
+        第三个* 所有类的任意方法
+        (..) 任意参数
+        -->
+        <aop:pointcut expression="execution( * com.max.one.AOP.*.*(..))" id="pt"></aop:pointcut>
+<!--        <aop:pointcut expression="execution( * com.max.JDBCDemo.*.*.*(..))" id="jdbcpt"></aop:pointcut>-->
+
+        <!--定义切面，定义哪个bean来做切面-->
+<!--        <aop:aspect ref="jdbcAdvice">-->
+<!--            <aop:around method="around" pointcut-ref="jdbcpt"></aop:around>-->
+<!--        </aop:aspect>-->
+        <aop:aspect ref="myMethodAdvice">
+            <!--前置通知
+            method是切面类对应的方法
+            pointcut-ref 给那些类的那些方法去做前置通知 值是 切入点表达式的id<aop:pointcut>
+<!-            &ndash;&gt;-->
+<!--            <aop:before method="before" pointcut-ref="pt"></aop:before>-->
+
+<!--            <aop:after method="after" pointcut-ref="pt"></aop:after>-->
+
+<!--            <aop:after-returning method="afterReturning" pointcut-ref="pt" returning="object"></aop:after-returning>-->
+
+<!--            <aop:after-throwing method="afterThrowing" pointcut-ref="pt" throwing="exception"></aop:after-throwing>-->
+            <!--环绕通知 可以自己定义集合前4中通知（前置 后置 返回值 异常） 对这四种通过任意组合使用
+            如果一个连接点方法 试用所有的通知（前置 后置 返回值 异常 环绕）
+            通知的执行顺序 ：前置 后置 返回值 环绕
+            异常通知不执行 （环绕通知里作了异常捕获处理，没有异常抛出 异常通知就不执行了）
+            由于环绕通知 会与之前的四种通知功能有重叠
+                        -->
+            <aop:around method="around" pointcut-ref="pt"></aop:around>
+
+        </aop:aspect>
+    </aop:config>
+    <!--当前的bean在execution( * com.max.one.AOP.*.*(..))范围内-->
+<!--    <bean id="student" class="com.max.one.AOP.Student"></bean>-->
+<!--    <bean id="user" class="com.max.one.AOP.User"></bean>-->
+<!--    <bean id="jdbcDemo" class="com.max.JDBCDemo.JDBCDemo"></bean>-->
+<!--    <bean id="jdbcAdvice" class="com.max.JDBCDemo.JDBCAdvice"></bean>-->
+
+    <!--配置c3p0的数据源-->
+    <bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+        <property name="driverClass" value="com.mysql.jdbc.Driver"></property>
+        <property name="jdbcUrl" value="jdbc:mysql://39.107.83.159:3306/Max"></property>
+        <property name="user" value="Max"></property>
+        <property name="password" value="123456"></property>
+        <!--在创建数据库连接池之后初始化的数据库的连接数  默认是3-->
+        <property name="initialPoolSize" value="3"></property>
+        <!--连接池中可以存在的最大连接数 默认是15-->
+        <property name="maxPoolSize" value="10"></property>
+        <!--当连接池中的连接用完的时候c3p0一次性创建新的连接数-->
+        <property name="acquireIncrement" value="2"></property>
+    </bean>
+
+    <bean name="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+        <!--这个属性是DataSource 属性 需要依赖注入 -->
+        <property name="dataSource" ref="dataSource"></property>
+    </bean>
+
+    <!--配置事务管理器的bean
+    DataSourceTransactionManager 数据事务管理器 适用于基于数据源的Connection连接数据库的框架(JDBCTemplate,MyBatis...)
+    -->
+    <bean id="dataSourceTransactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"></property>
+    </bean>
+
+    <!--配置事务的通知
+    transaction-manager=""指定使用的事务管理器
+    -->
+    <tx:advice id="txAdvice" transaction-manager="dataSourceTransactionManager" >
+        <tx:attributes>
+            <!--对于事务管理器中方法的管理
+            name="" 事务控制的方法 支持通配符 指的是在AOP pointcut表达式之内的方法与name的值匹配上的方法 就可以加入事务
+            按照当前的表达式execution(* com.max.bussines.TXDemo.*(..))和name的值name="update*"结合起来就是最终约束的范围
+            read-only=""
+            -->
+            <tx:method name="update*" read-only="false"></tx:method>
+            <!--事务的传播行为
+            propagation,事务的传播行为，默认值是REQUIRED
+            REQUIRED
+              有A,B,C三个方法  B和C的事务传播行为都是REQUIRED
+              A方法中调用B和C方法
+               1.A方法开启了事务，B和C方法会放在A方法的事务中执行，也就是A,B,C三个方法在同一个事务中
+                任意一个方法出现异常 都回导致A,B,C三个方法出现回滚
+               2.A方法没有开启事务，B和C方法会分别开启各自的事务，如果出现异常 在自己的内部回滚
+            SUPPORT
+
+
+            -->
+            <tx:method name="proUpdate*" read-only="false" propagation="REQUIRED"></tx:method>
+        </tx:attributes>
+    </tx:advice>
+    <!--配置事务的aop    -->
+    <aop:config>
+        <aop:pointcut id="txpt" expression="execution(* com.max.bussines.TXDemo.*(..))"></aop:pointcut>
+        <aop:pointcut id="propt" expression="execution(* com.max.propagation.PropagationDemo.*(..))"></aop:pointcut>
+        <!--advice-ref 事务通知的id pointcut-ref aop:pointcut 的id-->
+        <aop:advisor advice-ref="txAdvice" pointcut-ref="txpt"></aop:advisor>
+
+        <aop:advisor advice-ref="txAdvice" pointcut-ref="propt"></aop:advisor>
+    </aop:config>
+</beans>
